@@ -2,7 +2,7 @@
 
 A Rust command-line client for HTTP contract v1 of `wifi-recovery-api`. It submits HC22000 pattern searches, monitors jobs and Linux/AMD resources, stops and resumes work, and exports verified results. There are no login or token commands and no full-screen TUI.
 
-The product is one executable, `wifi-recovery-client` (Windows: `.exe`). There are no Docker files, images, installers or service definitions. Both Windows and Linux amd64 are supported. These projects are local-only pending testing and publication approval.
+The product is one executable, `wifi-recovery-client` (Windows: `.exe`). There are no Docker files, images, installers or service definitions. Both Windows and Linux amd64 are supported. Download the Linux amd64 executable and checksum from [GitHub Releases](https://github.com/securecodelabs/wifi-recovery-client-public/releases); Windows users can build the same source with Cargo.
 
 ## Commands
 
@@ -53,4 +53,4 @@ cargo +1.93.0 build --release --locked
 
 The Rust harness uses real local HTTP exchanges and the compiled CLI. It covers commands, pagination, prefix ambiguity, JSON/NDJSON, error codes, safe exports and Linux Ctrl+C behavior. See [quality requirements](docs/quality.md) and [measured validation](docs/validation.md). Remote acceptance tests run both native executables under `/home/wifi-service/wifi-suite`; no global installation or container is used.
 
-Releases require a new explicit user request. The manual workflow validates an existing source/version tag and publishes one selected platform's executable plus SHA-256 checksum. No releases or GitHub repositories have been created for this project. Code is Apache-2.0; [dependency notices](THIRD_PARTY_NOTICES.md) cover third-party components.
+Releases require an explicit user request. The manual workflow validates an existing source/version tag and publishes one selected platform's executable plus SHA-256 checksum. The first release, v0.1.0, publishes the locally tested Linux amd64 executable. Release notes identify the source revision and published asset checksum. Code is Apache-2.0; [dependency notices](THIRD_PARTY_NOTICES.md) cover third-party components.

@@ -1,6 +1,6 @@
 # Development requirements
 
-Implement fresh Rust code and tests from the agreed protocol. Existing projects are examples only; do not copy their source or history. Keep test credentials and private data out of the repository. Do not create a GitHub repository or push yet.
+Implement fresh Rust code and tests from the agreed protocol. Existing projects are examples only; do not copy their source or history. Keep test credentials and private data out of the repository. Repository publication and pushes require user authorization; the initial public repository and v0.1.0 release were authorized on 2026-11-24.
 
 Use the pinned toolchain and identical local/CI formatting, Clippy, complexity, test, build and security checks. Refactor complexity failures without blanket lint allowances or higher thresholds.
 
