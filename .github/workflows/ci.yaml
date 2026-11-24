@@ -1,0 +1,65 @@
+name: Rust checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+  schedule:
+    - cron: '53 4 * * 1'
+permissions:
+  contents: read
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
+jobs:
+  rust:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-26.04, windows-2022]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned Rust
+        run: rustup toolchain install 1.93.0 --profile minimal --component rustfmt --component clippy
+      - name: Formatting and complexity
+        shell: pwsh
+        run: |
+          cargo +1.93.0 fmt --all -- --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo +1.93.0 clippy --locked --all-targets --all-features -- -D warnings -D clippy::cognitive_complexity -D clippy::too_many_lines -D clippy::excessive_nesting -D clippy::too_many_arguments
+      - name: HTTP tests and executable
+        shell: pwsh
+        run: |
+          cargo +1.93.0 test --locked --all-targets --all-features
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo +1.93.0 build --release --locked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./target/release/wifi-recovery-client --version
+          & ./target/release/wifi-recovery-client --help
+  security:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install pinned Rust
+        run: rustup toolchain install 1.93.0 --profile minimal
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.13'
+      - name: Workflow, dependency, license and secret checks
+        run: bash .github/security.sh
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: security-reports
+          path: ci-reports/
+          retention-days: 7
+          if-no-files-found: ignore

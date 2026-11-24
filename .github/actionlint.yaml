@@ -1,0 +1,3 @@
+# Allow the newer hosted image label with actionlint 1.7.12.
+self-hosted-runner:
+  labels: [ubuntu-26.04]

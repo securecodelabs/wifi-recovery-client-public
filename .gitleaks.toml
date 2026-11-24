@@ -1,0 +1,5 @@
+[extend]
+useDefault = true
+[[allowlists]]
+description = "Generated build artifacts and checking tools; source and history remain scanned"
+paths = ['''(^|/)(target|dist|\.tools|ci-reports)/''']

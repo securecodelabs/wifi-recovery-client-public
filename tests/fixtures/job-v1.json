@@ -1,0 +1,25 @@
+{
+  "id": "12345678-1234-4234-8234-123456789abc",
+  "state": "queued",
+  "search": {"pattern": "Home?d?d?d?d", "runtime_seconds": 60, "candidate_limit": 0},
+  "gpu_batch": 4096,
+  "filename": "synthetic.hc22000",
+  "input_sha256": "131bcc4cdffe957c8459e39d2cf371b37be578328e0b47fd35fcf31d7f483d85",
+  "input_bytes": 4908,
+  "created_at_ms": 1795510000000,
+  "updated_at_ms": 1795510000000,
+  "first_started_at_ms": null,
+  "total_active_seconds": 0.0,
+  "attempts": [],
+  "progress": {
+    "stage": "", "sample_at_ms": null, "rate_sample_at_ms": null, "estimate_sample_at_ms": null,
+    "fresh": false, "tested_candidates": null, "total_candidates": null, "fraction": null,
+    "recovered_records": null, "total_records": null, "candidate_hex": null, "candidate_text": null,
+    "candidates_per_second": null, "kh_per_second": null, "speed_basis": "",
+    "search_elapsed_seconds": null, "estimated_full_seconds": null, "search_eta_seconds": null,
+    "estimated_finish_at_ms": null, "runtime_remaining_seconds": null, "candidate_limit_remaining": null
+  },
+  "error": null,
+  "resume_available": false,
+  "resume_reason": "Job state cannot be resumed"
+}

@@ -1,0 +1,11 @@
+[graph]
+all-features = true
+targets = ["x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"]
+
+[licenses]
+confidence-threshold = 0.95
+allow = ["Apache-2.0", "MIT", "BSD-3-Clause", "ISC", "Unicode-3.0"]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

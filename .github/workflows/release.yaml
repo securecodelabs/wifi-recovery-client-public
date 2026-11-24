@@ -1,0 +1,62 @@
+name: Release executable
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag on this exact source revision
+        required: true
+        type: string
+      platform:
+        description: Select one executable platform
+        required: true
+        type: choice
+        options: [linux, windows]
+permissions:
+  contents: read
+jobs:
+  checks:
+    uses: ./.github/workflows/ci.yaml # zizmor: ignore[self-repository] -- Same-commit checks shared with ordinary CI.
+  publish:
+    needs: checks
+    runs-on: ${{ inputs.platform == 'windows' && 'windows-2022' || 'ubuntu-26.04' }}
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify tag and exact executable
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_PLATFORM: ${{ inputs.platform }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          if ($env:RELEASE_TAG -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+$') { throw 'Expected vMAJOR.MINOR.PATCH' }
+          $revision = git rev-parse "$($env:RELEASE_TAG)^{commit}"
+          if ($LASTEXITCODE -ne 0 -or $revision -ne $env:SOURCE_SHA) { throw 'Tag does not identify this source revision' }
+          rustup toolchain install 1.93.0 --profile minimal
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo +1.93.0 build --release --locked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $suffix = if ($env:RELEASE_PLATFORM -eq 'windows') { '.exe' } else { '' }
+          $binary = "./target/release/wifi-recovery-client$suffix"
+          $version = & $binary --version
+          if ($version -ne "wifi-recovery-client $($env:RELEASE_TAG.Substring(1))") { throw 'Executable version differs from tag' }
+          & $binary --help
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          New-Item -ItemType Directory -Force dist | Out-Null
+          $asset = "wifi-recovery-client-$($env:RELEASE_PLATFORM)-amd64$suffix"
+          Copy-Item $binary "dist/$asset"
+          $hash = (Get-FileHash "dist/$asset" -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $asset" | Set-Content "dist/$asset.sha256" -Encoding utf8NoBOM
+          "Source: $($env:SOURCE_SHA)`nRust 1.93.0; $($env:RELEASE_PLATFORM) amd64. One executable with embedded license notices (--licenses)." | Set-Content dist/release-notes.md -Encoding utf8NoBOM
+          "RELEASE_ASSET=$asset" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Publish executable and checksum
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: gh release create $env:RELEASE_TAG --verify-tag --title $env:RELEASE_TAG --notes-file dist/release-notes.md "dist/$env:RELEASE_ASSET" "dist/$env:RELEASE_ASSET.sha256"

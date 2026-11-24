@@ -1,0 +1,7 @@
+/target
+/dist
+/.tools
+/ci-reports
+/research
+/test-data
+*.log
