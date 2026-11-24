@@ -24,7 +24,7 @@ wifi-recovery-client delete JOB_ID --yes
 
 `--json` produces JSON; watches produce one JSON snapshot per line. `--interval` sets polling seconds (0.1-3600, default 2). Full UUIDs are preserved in output. An unambiguous prefix of at least four characters can be used for job commands. Lists fetch every page.
 
-Runtime accepts whole seconds or `s`, `m`, `h` suffixes. Zero runtime/limit means unlimited. `submit --request-id UUID` binds retries to the input and normalized settings; the server rejects different content or reuse after deletion. Submissions are not automatically retried. Stopping is explicit: Ctrl+C exits the local watch without stopping the server job. Failed polling also leaves server work unchanged.
+Runtime accepts 0-86400 whole seconds or `s`, `m`, `h` suffixes (up to `24h`). Zero runtime/limit means unlimited. Input must be a regular file of 1 byte to 8 MiB; the server may configure a lower limit. `submit --request-id UUID` binds retries to the input and normalized settings; the server rejects different content or reuse after deletion. Submissions are not automatically retried. Stopping is explicit: Ctrl+C exits the local watch without stopping the server job. Failed polling also leaves server work unchanged.
 
 Combined watch output includes pattern, stage, progress, start times in UTC, attempt and total durations, estimates, latest batch candidate, kH/s, CPU, RAM, GPU load and VRAM. kH/s is the engine's run-average PBKDF2 derivation throughput; candidates/s is a separate measurement. Missing/stale values remain unknown. JSON timestamps retain Unix milliseconds. Terminal control characters are escaped.
 

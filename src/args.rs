@@ -92,7 +92,11 @@ fn duration(text: &str) -> Result<u64, String> {
         .parse::<u64>()
         .ok()
         .and_then(|value| value.checked_mul(multiplier))
-        .ok_or_else(|| "Runtime requires whole seconds or a suffix s, m or h".into())
+        .filter(|value| *value <= 86400)
+        .ok_or_else(|| {
+            "Runtime must be 0-86400 whole seconds, optionally using s, m or h (0 is unlimited)"
+                .into()
+        })
 }
 
 #[cfg(test)]
@@ -102,7 +106,8 @@ mod tests {
     fn bounded_durations_and_intervals() {
         assert_eq!(duration("2h").unwrap(), 7200);
         assert_eq!(duration("0").unwrap(), 0);
-        for invalid in ["1.5h", "-2", "18446744073709551615h"] {
+        assert_eq!(duration("24h").unwrap(), 86400);
+        for invalid in ["1.5h", "-2", "18446744073709551615h", "86401", "25h"] {
             assert!(duration(invalid).is_err());
         }
         for invalid in ["NaN", "inf", "0", "3601"] {

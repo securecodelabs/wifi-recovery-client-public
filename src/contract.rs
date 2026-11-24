@@ -98,6 +98,12 @@ pub fn job(value: &serde_json::Value) -> anyhow::Result<JobReply> {
     Ok(serde_json::from_value(value.clone())?)
 }
 
+pub fn job_for(value: &serde_json::Value, id: Uuid) -> anyhow::Result<JobReply> {
+    let reply = job(value)?;
+    anyhow::ensure!(reply.id == id, "API returned a different job");
+    Ok(reply)
+}
+
 pub fn validate_jobs(value: &serde_json::Value) -> anyhow::Result<()> {
     if value.get("id").is_some() {
         job(value)?;
@@ -111,4 +117,38 @@ pub fn validate_jobs(value: &serde_json::Value) -> anyhow::Result<()> {
         }
     }
     Ok(())
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SystemReply {
+    pub contract: u32,
+    pub sample_age_ms: u64,
+    pub source: String,
+    pub resources: Resources,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Resources {
+    pub sampled_at_ms: u64,
+    pub cpu_percent: Option<f64>,
+    pub memory_total_bytes: Option<u64>,
+    pub memory_available_bytes: Option<u64>,
+    pub memory_used_bytes: Option<u64>,
+    pub gpus: Vec<Gpu>,
+    pub selected_gpu_pci: Option<String>,
+    pub gpu_mapping: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Gpu {
+    pub pci: String,
+    pub utilization_percent: Option<u64>,
+    pub memory_used_bytes: Option<u64>,
+    pub memory_total_bytes: Option<u64>,
+}
+
+pub fn system(value: &serde_json::Value) -> anyhow::Result<SystemReply> {
+    let reply: SystemReply = serde_json::from_value(value.clone())?;
+    anyhow::ensure!(reply.contract == 1, "Unsupported API contract");
+    Ok(reply)
 }

@@ -40,7 +40,13 @@ jobs:
           cargo +1.93.0 build --release --locked
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & ./target/release/wifi-recovery-client --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & ./target/release/wifi-recovery-client --help
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $suffix = if ($IsWindows) { '.exe' } else { '' }
+          $env:WIFI_TEST_CLIENT = (Resolve-Path "./target/release/wifi-recovery-client$suffix").Path
+          cargo +1.93.0 test --locked --test http_cli
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   security:
     runs-on: ubuntu-26.04
     timeout-minutes: 20

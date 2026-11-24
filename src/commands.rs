@@ -18,7 +18,7 @@ pub async fn run(options: Options) -> Result<u8> {
         Action::Info { watch: false } => {
             let ready = api.get("readyz").await?;
             ensure!(ready["contract"] == 1, "Unsupported API contract");
-            let mut system = api.get("v1/system").await?;
+            let mut system = api.system().await?;
             system["ready"] = ready;
             system
         }
@@ -43,10 +43,7 @@ pub async fn run(options: Options) -> Result<u8> {
             )
             .await;
         }
-        Action::Status { id } => {
-            api.get(&format!("v1/jobs/{}", api.resolve(&id).await?))
-                .await?
-        }
+        Action::Status { id } => api.job(api.resolve(&id).await?).await?,
         Action::Stop { id } => mutation(&api, &id, "stop").await?,
         Action::Resume { id } => mutation(&api, &id, "resume").await?,
         Action::Result { id, output } => {
@@ -71,12 +68,12 @@ pub async fn run(options: Options) -> Result<u8> {
 }
 
 async fn mutation(api: &Api, id: &str, action: &str) -> Result<Value> {
-    api.request(
-        Method::POST,
-        &format!("v1/jobs/{}/{action}", api.resolve(id).await?),
-        None,
-    )
-    .await
+    let id = api.resolve(id).await?;
+    let value = api
+        .request(Method::POST, &format!("v1/jobs/{id}/{action}"), None)
+        .await?;
+    crate::contract::job_for(&value, id)?;
+    Ok(value)
 }
 
 async fn watch(api: &Api, id: Option<Uuid>, json: bool, interval: f64) -> Result<u8> {
@@ -88,9 +85,9 @@ async fn watch(api: &Api, id: Option<Uuid>, json: bool, interval: f64) -> Result
 
 async fn poll(api: &Api, id: Option<Uuid>, json: bool, interval: Duration) -> Result<u8> {
     loop {
-        let system = api.get("v1/system").await?;
+        let system = api.system().await?;
         if let Some(id) = id {
-            let job = api.get(&format!("v1/jobs/{id}")).await?;
+            let job = api.job(id).await?;
             let exit = terminal(&job)?;
             output::print(&json!({"job":job,"system":system}), json)?;
             if let Some(exit) = exit {

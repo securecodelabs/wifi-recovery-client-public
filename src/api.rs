@@ -50,12 +50,25 @@ impl Api {
         self.request(Method::GET, path, None).await
     }
 
+    pub async fn job(&self, id: Uuid) -> Result<Value> {
+        let value = self.get(&format!("v1/jobs/{id}")).await?;
+        contract::job_for(&value, id)?;
+        Ok(value)
+    }
+
+    pub async fn system(&self) -> Result<Value> {
+        let value = self.get("v1/system").await?;
+        contract::system(&value)?;
+        Ok(value)
+    }
+
     pub async fn submit(&self, submission: &Submission) -> Result<Value> {
         let file = tokio::fs::File::open(&submission.file).await?;
-        let length = file.metadata().await?.len();
+        let metadata = file.metadata().await?;
+        let length = metadata.len();
         ensure!(
-            length > 0 && length <= 64 * 1024 * 1024,
-            "Input must contain 1 byte to 64 MiB (server may impose a lower limit)"
+            metadata.is_file() && length > 0 && length <= 8 * 1024 * 1024,
+            "Input must be a regular file containing 1 byte to 8 MiB (server may impose a lower limit)"
         );
         let filename = submission
             .file
@@ -85,7 +98,9 @@ impl Api {
         if let Some(key) = submission.request_id {
             request = request.header("Idempotency-Key", key.to_string());
         }
-        decode(request.send().await?).await
+        let value = decode(request.send().await?).await?;
+        contract::job(&value)?;
+        Ok(value)
     }
 
     pub async fn jobs(&self) -> Result<Vec<Value>> {
@@ -142,18 +157,32 @@ async fn decode(mut response: Response) -> Result<Value> {
         );
         bytes.extend_from_slice(&chunk);
     }
+    if !status.is_success() {
+        return Err(response_error(status, &bytes));
+    }
     if status == reqwest::StatusCode::NO_CONTENT {
         return Ok(Value::Null);
     }
     let value: Value = serde_json::from_slice(&bytes).context("API returned invalid JSON")?;
-    ensure!(
-        status.is_success(),
-        "HTTP {}: {}",
-        status.as_u16(),
-        value["error"]["message"]
-            .as_str()
-            .unwrap_or("Request failed")
-    );
     contract::validate_jobs(&value)?;
     Ok(value)
+}
+
+fn response_error(status: reqwest::StatusCode, bytes: &[u8]) -> anyhow::Error {
+    let value = serde_json::from_slice::<Value>(bytes).ok();
+    let text = String::from_utf8_lossy(bytes);
+    let message = value
+        .as_ref()
+        .and_then(|v| v["error"]["message"].as_str())
+        .unwrap_or(text.trim());
+    let message = if message.is_empty() {
+        status.canonical_reason().unwrap_or("Request failed")
+    } else {
+        message
+    };
+    anyhow::anyhow!(
+        "HTTP {}: {}",
+        status.as_u16(),
+        message.chars().take(2048).collect::<String>()
+    )
 }

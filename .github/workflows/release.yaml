@@ -50,6 +50,9 @@ jobs:
           New-Item -ItemType Directory -Force dist | Out-Null
           $asset = "wifi-recovery-client-$($env:RELEASE_PLATFORM)-amd64$suffix"
           Copy-Item $binary "dist/$asset"
+          $env:WIFI_TEST_CLIENT = (Resolve-Path "dist/$asset").Path
+          cargo +1.93.0 test --locked --test http_cli
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $hash = (Get-FileHash "dist/$asset" -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  $asset" | Set-Content "dist/$asset.sha256" -Encoding utf8NoBOM
           "Source: $($env:SOURCE_SHA)`nRust 1.93.0; $($env:RELEASE_PLATFORM) amd64. One executable with embedded license notices (--licenses)." | Set-Content dist/release-notes.md -Encoding utf8NoBOM
