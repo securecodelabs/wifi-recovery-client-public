@@ -53,6 +53,6 @@ cargo +1.93.0 build --release --locked
 
 The Rust harness uses real local HTTP exchanges and the compiled CLI. It covers commands, pagination, prefix ambiguity, JSON/NDJSON, error codes, safe exports and Linux Ctrl+C behavior. See [quality requirements](docs/quality.md) and [measured validation](docs/validation.md). Remote acceptance tests run both native executables under `/home/wifi-service/wifi-suite`; no global installation or container is used.
 
-The [three-round review report](docs/review-20261124.md) records subsequent fixes and regression results. Set `WIFI_TEST_CLIENT` to an absolute executable path when running `cargo test --locked --test http_cli` to validate that exact packaged binary; CI and releases use this mechanism.
+The [three-round review report](docs/review-20261124.md) records the fixes included in v0.1.1 and their regression results. See the [changelog](CHANGELOG.md) for release changes. Set `WIFI_TEST_CLIENT` to an absolute executable path when running `cargo test --locked --test http_cli` to validate that exact packaged binary; CI and releases use this mechanism.
 
 Releases require an explicit user request. The manual workflow validates an existing source/version tag and publishes one selected platform's executable plus SHA-256 checksum. The first release, v0.1.0, publishes the locally tested Linux amd64 executable. Release notes identify the source revision and published asset checksum. Code is Apache-2.0; [dependency notices](THIRD_PARTY_NOTICES.md) cover third-party components.
