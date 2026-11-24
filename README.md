@@ -51,6 +51,6 @@ cargo +1.93.0 test --locked --all-targets --all-features
 cargo +1.93.0 build --release --locked
 ```
 
-The Rust harness uses real local HTTP exchanges and the compiled CLI. It covers commands, pagination, prefix ambiguity, JSON/NDJSON, error codes, safe exports and Linux Ctrl+C behavior. See [quality requirements](docs/quality.md). Remote acceptance tests run both native executables under `/home/wifi-service/wifi-suite`; no global installation or container is used.
+The Rust harness uses real local HTTP exchanges and the compiled CLI. It covers commands, pagination, prefix ambiguity, JSON/NDJSON, error codes, safe exports and Linux Ctrl+C behavior. See [quality requirements](docs/quality.md) and [measured validation](docs/validation.md). Remote acceptance tests run both native executables under `/home/wifi-service/wifi-suite`; no global installation or container is used.
 
 Releases require a new explicit user request. The manual workflow validates an existing source/version tag and publishes one selected platform's executable plus SHA-256 checksum. No releases or GitHub repositories have been created for this project. Code is Apache-2.0; [dependency notices](THIRD_PARTY_NOTICES.md) cover third-party components.
