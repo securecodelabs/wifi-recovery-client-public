@@ -37,7 +37,7 @@ jobs:
           if ($env:RELEASE_TAG -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+$') { throw 'Expected vMAJOR.MINOR.PATCH' }
           $revision = git rev-parse "$($env:RELEASE_TAG)^{commit}"
           if ($LASTEXITCODE -ne 0 -or $revision -ne $env:SOURCE_SHA) { throw 'Tag does not identify this source revision' }
-          rustup toolchain install 1.93.0 --profile minimal
+          rustup toolchain install 1.93.0 --profile minimal --component rustfmt --component clippy
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cargo +1.93.0 build --release --locked
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
