@@ -42,6 +42,28 @@ Results are checked for the requested job identity and verified password structu
 | 14 | Watched job was interrupted |
 | 130 | Local watch interrupted with Ctrl+C |
 
+## Variable-length patterns
+
+Build the updated client, API and engine to use incremental searches; the
+existing published artifacts do not include this feature.
+
+```sh
+wifi-recovery-client pattern preview 'Home?d?d?d?d?d?d' --increment --increment-min 8 --increment-max 10
+wifi-recovery-client submit input.hc22000 --pattern 'Home?d?d?d?d?d?d' --increment --increment-min 8 --increment-max 10 --runtime 2h
+```
+
+This tries `Home` plus four, five and six digits in ascending length order:
+1,110,000 candidates in one job, sharing the attempt's runtime/candidate budget.
+Preview reports per-length and total counts; status/watch display the range.
+Resume continues across length boundaries using the original stored settings.
+
+Bounds require `--increment` and must be ordered within 8–63 bytes. The minimum
+defaults to 8 and the maximum to the pattern's length; a larger maximum is
+capped there. Each shorter search uses a prefix of the supplied pattern,
+including literal bytes. UTF-8 literals can be split at byte boundaries. The
+pattern must reach the minimum length and never grows beyond its supplied
+positions. Fixed-length commands retain their existing behavior.
+
 ## Build and test
 
 ```sh

@@ -63,6 +63,7 @@ impl Api {
     }
 
     pub async fn submit(&self, submission: &Submission) -> Result<Value> {
+        submission.increment.validate()?;
         let file = tokio::fs::File::open(&submission.file).await?;
         let metadata = file.metadata().await?;
         let length = metadata.len();
@@ -87,6 +88,9 @@ impl Api {
                     pattern: submission.pattern.clone(),
                     runtime_seconds: submission.runtime,
                     candidate_limit: submission.limit,
+                    increment: submission.increment.increment,
+                    increment_min: submission.increment.increment_min,
+                    increment_max: submission.increment.increment_max,
                 })?,
             )
             .part("file", part);

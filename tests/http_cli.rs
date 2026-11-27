@@ -24,6 +24,7 @@ struct Exchange {
     path: String,
     status: u16,
     value: Value,
+    body_contains: Vec<&'static str>,
 }
 
 fn exchange(method: &'static str, path: &str, value: Value) -> Exchange {
@@ -32,6 +33,7 @@ fn exchange(method: &'static str, path: &str, value: Value) -> Exchange {
         path: path.into(),
         status: 200,
         value,
+        body_contains: Vec::new(),
     }
 }
 
@@ -89,6 +91,13 @@ fn serve_one(listener: &TcpListener, expected: Exchange) {
         .unwrap_or(0);
     let mut body = vec![0; length];
     stream.read_exact(&mut body).unwrap();
+    let request_body = String::from_utf8_lossy(&body);
+    for expected_text in expected.body_contains {
+        assert!(
+            request_body.contains(expected_text),
+            "Missing {expected_text} in request body: {request_body}"
+        );
+    }
     let body = expected.value.to_string();
     write!(stream,"HTTP/1.1 {} OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",expected.status,body.len(),body).unwrap();
 }
@@ -183,6 +192,7 @@ fn pagination_prefixes_errors_and_watch_outcomes() {
             path,
             status: 404,
             value: json!({"error":{"message":"missing\u{1b}[31m"}}),
+            body_contains: Vec::new(),
         },
     ]);
     assert_eq!(successful(call(&url, &["status", "1234"]))["id"], ID);
@@ -236,6 +246,71 @@ fn submission_and_verified_export_do_not_overwrite_files() {
             .status
             .code(),
         Some(1)
+    );
+    worker.join().unwrap();
+}
+
+#[test]
+fn incremental_preview_submission_and_display_use_the_same_range() {
+    let directory = tempfile::tempdir().unwrap();
+    let input = directory.path().join("synthetic.hc22000");
+    std::fs::write(&input, "synthetic capture").unwrap();
+    let mut reply = job();
+    reply["search"]["increment"] = true.into();
+    reply["search"]["increment_min"] = 8.into();
+    reply["search"]["increment_max"] = 10.into();
+    let expected = vec![
+        r#""increment":true"#,
+        r#""increment_min":8"#,
+        r#""increment_max":10"#,
+        r#""pattern":"Home?d?d?d?d?d?d"#,
+    ];
+    let mut preview = exchange(
+        "POST",
+        "/v1/patterns/preview",
+        json!({"candidate_count":1110000}),
+    );
+    preview.body_contains = expected.clone();
+    let mut submission = exchange("POST", "/v1/jobs", reply.clone());
+    submission.body_contains = expected;
+    let (url, worker) = server(vec![
+        preview,
+        submission,
+        exchange("GET", &format!("/v1/jobs/{ID}"), reply),
+    ]);
+    let flags = [
+        "--increment",
+        "--increment-min",
+        "8",
+        "--increment-max",
+        "10",
+    ];
+    let mut preview_args = vec!["pattern", "preview", "Home?d?d?d?d?d?d"];
+    preview_args.extend(flags);
+    assert_eq!(
+        successful(call(&url, &preview_args))["candidate_count"],
+        1110000
+    );
+    let mut submit_args = vec![
+        "submit",
+        input.to_str().unwrap(),
+        "--pattern",
+        "Home?d?d?d?d?d?d",
+    ];
+    submit_args.extend(flags);
+    assert_eq!(
+        successful(call(&url, &submit_args))["search"]["increment_max"],
+        10
+    );
+    let output = Command::new(client_executable())
+        .args(["--server", &url, "status", ID])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    assert!(
+        String::from_utf8(output.stdout)
+            .unwrap()
+            .contains("Incremental password lengths (bytes): 8..10")
     );
     worker.join().unwrap();
 }

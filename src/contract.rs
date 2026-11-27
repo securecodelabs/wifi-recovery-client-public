@@ -6,6 +6,12 @@ pub struct Search {
     pub pattern: String,
     pub runtime_seconds: u64,
     pub candidate_limit: u64,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub increment: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub increment_min: Option<u8>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub increment_max: Option<u8>,
 }
 
 #[derive(Debug, Deserialize)]

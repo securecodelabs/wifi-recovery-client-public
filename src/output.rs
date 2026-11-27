@@ -54,6 +54,18 @@ pub fn print(value: &Value, json: bool) -> Result<()> {
     Ok(())
 }
 
+fn incremental_lengths(search: &Value, output: &mut impl Write) -> Result<()> {
+    if search["increment"].as_bool().unwrap_or(false) {
+        writeln!(
+            output,
+            "Incremental password lengths (bytes): {}..{}",
+            field(search, "increment_min"),
+            field(search, "increment_max")
+        )?;
+    }
+    Ok(())
+}
+
 fn job(value: &Value, output: &mut impl Write) -> Result<()> {
     writeln!(output, "{}  {}", field(value, "id"), field(value, "state"))?;
     writeln!(
@@ -62,6 +74,7 @@ fn job(value: &Value, output: &mut impl Write) -> Result<()> {
         field(&value["search"], "pattern"),
         field(value, "filename")
     )?;
+    incremental_lengths(&value["search"], output)?;
     writeln!(
         output,
         "Created / first started (UTC): {} / {}",

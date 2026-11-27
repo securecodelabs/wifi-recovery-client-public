@@ -23,12 +23,12 @@ pub async fn run(options: Options) -> Result<u8> {
             system
         }
         Action::Pattern {
-            command: Pattern::Preview { pattern },
+            command: Pattern::Preview { pattern, increment },
         } => {
             api.request(
                 Method::POST,
                 "v1/patterns/preview",
-                Some(json!({"pattern":pattern})),
+                Some(increment.preview_request(pattern)?),
             )
             .await?
         }
